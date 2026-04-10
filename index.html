@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Personal Finance Dashboard</p>
+        <h1>Smart Expense Tracker</h1>
+        <p class="subtle">Track salary, expenses, EMI, and spending patterns without the clutter.</p>
+      </div>
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+        <span id="themeIcon">🌙</span>
+      </button>
+    </header>
+
+    <section class="cards-grid">
+      <article class="stat-card accent">
+        <span>Monthly Income</span>
+        <strong id="monthlyIncome">₹0</strong>
+        <small>Saved salary / all income for this month</small>
+      </article>
+
+      <article class="stat-card">
+        <span>Total Expenses</span>
+        <strong id="totalExpenses">₹0</strong>
+        <small>All expense types combined</small>
+      </article>
+
+      <article class="stat-card">
+        <span>EMI This Month</span>
+        <strong id="totalEmi">₹0</strong>
+        <small>EMI included inside expenses</small>
+      </article>
+
+      <article class="stat-card">
+        <span>Balance</span>
+        <strong id="balanceAmount">₹0</strong>
+        <small>Income minus expenses</small>
+      </article>
+    </section>
+
+    <section class="panel income-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Set Monthly Salary / Income</h2>
+          <p>Use this to save the monthly salary amount. You can update it anytime.</p>
+        </div>
+      </div>
+
+      <form id="incomeForm" class="inline-form">
+        <input id="incomeAmount" type="number" min="0" step="0.01" placeholder="Enter monthly salary" required />
+        <input id="incomeDate" type="date" required />
+        <input id="incomeNote" type="text" placeholder="Optional note" maxlength="80" />
+        <button type="submit">Save Income</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Add Daily Transaction</h2>
+          <p>Add an expense or income entry. Expenses power the charts and transaction history.</p>
+        </div>
+        <span id="editBadge" class="edit-badge hidden">Editing</span>
+      </div>
+
+      <form id="transactionForm" class="transaction-form">
+        <input id="transactionDate" type="date" required />
+
+        <select id="transactionType" required>
+          <option value="expense" selected>Expense</option>
+          <option value="income">Income</option>
+        </select>
+
+        <select id="categorySelect" required></select>
+
+        <input id="transactionAmount" type="number" min="0" step="0.01" placeholder="Amount" required />
+
+        <input id="transactionNote" type="text" placeholder="Notes like lunch, cab, EMI..." maxlength="100" />
+
+        <div class="form-actions">
+          <button type="submit" id="saveTransactionBtn">Add Transaction</button>
+          <button type="button" id="cancelEditBtn" class="ghost-btn hidden">Cancel Edit</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel chart-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Expense Breakdown Pie</h2>
+            <p>Pick a date, then view category totals for that day, the 7 days ending on it, or that full month.</p>
+          </div>
+        </div>
+        <div class="pie-controls">
+          <label class="pie-date-control">
+            <span>Reference Date</span>
+            <input id="pieDate" type="date" aria-label="Choose a date for the pie chart" />
+          </label>
+          <div class="segmented pie-segmented" role="tablist" aria-label="Pie chart filter">
+            <button type="button" class="segment pie-range-btn active" data-pie-range="daily">Daily</button>
+            <button type="button" class="segment pie-range-btn" data-pie-range="weekly">Weekly</button>
+            <button type="button" class="segment pie-range-btn" data-pie-range="monthly">Monthly</button>
+          </div>
+        </div>
+        <div class="pie-wrap">
+          <canvas id="pieChart" width="320" height="320" aria-label="Pie chart"></canvas>
+          <div class="pie-center">
+            <div id="pieCenterPercent">0%</div>
+            <div id="pieCenterLabel">No data</div>
+            <div id="pieCenterAmount"></div>
+          </div>
+        </div>
+        <p id="pieMessage" class="chart-message">No expenses found for this period.</p>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-header line-header">
+          <div>
+            <h2>Weekly / Monthly Spending Bar</h2>
+            <p>Tracks total expenses as bars. Hover a bar to see the spend for that period.</p>
+          </div>
+          <div class="segmented line-segmented" role="tablist" aria-label="Chart filter">
+            <button type="button" class="segment line-range-btn active" data-range="weekly">Weekly</button>
+            <button type="button" class="segment line-range-btn" data-range="monthly">Monthly</button>
+          </div>
+        </div>
+        <canvas id="lineChart" width="640" height="320" aria-label="Bar chart"></canvas>
+        <p id="lineMessage" class="chart-message">Hover a bar to see the spend for that period.</p>
+      </article>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Transaction History</h2>
+          <p>Scrollable list with edit and delete controls.</p>
+        </div>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+  </div>
+
+  <template id="historyItemTemplate">
+    <article class="history-item">
+      <div class="history-left">
+        <div class="history-topline">
+          <strong class="history-title"></strong>
+          <span class="history-type"></span>
+        </div>
+        <p class="history-meta"></p>
+        <p class="history-note"></p>
+      </div>
+      <div class="history-right">
+        <strong class="history-amount"></strong>
+        <div class="history-actions">
+          <button type="button" class="edit-btn">Edit</button>
+          <button type="button" class="delete-btn">Delete</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
