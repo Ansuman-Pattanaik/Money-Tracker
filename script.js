@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
 };
 
 const expenseCategories = ["Food", "Travel", "Shopping", "Health Care", "EMI", "Others"];
-const incomeCategories = ["Salary", "Bonus", "Other Income"];
+const incomeCategories = ["Salary", "Bonus", "Rental", "Trading", "Other Income"];
 const today = new Date();
 
 const els = {
@@ -20,6 +20,7 @@ const els = {
   balanceAmount: document.getElementById("balanceAmount"),
   incomeForm: document.getElementById("incomeForm"),
   incomeAmount: document.getElementById("incomeAmount"),
+  incomeCategory: document.getElementById("incomeCategory"),
   incomeDate: document.getElementById("incomeDate"),
   incomeNote: document.getElementById("incomeNote"),
   transactionForm: document.getElementById("transactionForm"),
@@ -36,9 +37,11 @@ const els = {
   pieCenterPercent: document.getElementById("pieCenterPercent"),
   pieCenterLabel: document.getElementById("pieCenterLabel"),
   pieCenterAmount: document.getElementById("pieCenterAmount"),
+  pieTotal: document.getElementById("pieTotal"),
   pieMessage: document.getElementById("pieMessage"),
   lineCanvas: document.getElementById("lineChart"),
   lineDate: document.getElementById("lineDate"),
+  lineTotal: document.getElementById("lineTotal"),
   lineMessage: document.getElementById("lineMessage"),
   historyList: document.getElementById("historyList"),
   historyTemplate: document.getElementById("historyItemTemplate"),
@@ -127,6 +130,20 @@ function shiftDateString(dateStr, offsetDays) {
   return toDateInputValue(d);
 }
 
+function getWeekBounds(dateStr) {
+  const reference = parseDateInput(dateStr);
+  const start = new Date(reference);
+  start.setDate(reference.getDate() - reference.getDay());
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return {
+    startDate: toDateInputValue(start),
+    endDate: toDateInputValue(end),
+  };
+}
+
 function formatDisplayDate(dateStr, options = { day: "numeric", month: "short", year: "numeric" }) {
   return parseDateInput(dateStr).toLocaleDateString(undefined, options);
 }
@@ -169,6 +186,12 @@ function getCategoryOptions() {
 function renderCategoryOptions() {
   const options = getCategoryOptions();
   els.categorySelect.innerHTML = options.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+}
+
+function renderIncomeSourceOptions() {
+  els.incomeCategory.innerHTML = incomeCategories
+    .map(cat => `<option value="${cat}">${cat}</option>`)
+    .join("");
 }
 
 function getMonthlyIncome() {
@@ -254,6 +277,10 @@ function getActivePieSegment() {
 }
 
 function syncPieCenterContent() {
+  els.pieTotal.textContent = pieChartState.contextLabel
+    ? `Total expenses ${pieChartState.contextLabel}: ${formatCurrency(pieChartState.total)}`
+    : `Total expenses: ${formatCurrency(pieChartState.total)}`;
+
   const activeSegment = getActivePieSegment();
 
   if (!activeSegment) {
@@ -470,35 +497,34 @@ function getLineContext() {
   const referenceDate = normalizeDateString(lineReferenceDate);
 
   if (activeRange === "weekly") {
-    const startDate = shiftDateString(referenceDate, -6);
+    const { startDate, endDate } = getWeekBounds(referenceDate);
 
     return {
-      ariaLabel: `weekly expense bar chart from ${formatDisplayDate(startDate)} to ${formatDisplayDate(referenceDate)}`,
-      emptyMessage: `No expense data found from ${formatDisplayDate(startDate)} to ${formatDisplayDate(referenceDate)}.`,
-      rangeLabel: `week ending ${formatDisplayDate(referenceDate)}`,
+      ariaLabel: `weekly expense bar chart from ${formatDisplayDate(startDate)} to ${formatDisplayDate(endDate)}`,
+      emptyMessage: `No expense data found from ${formatDisplayDate(startDate)} to ${formatDisplayDate(endDate)}.`,
+      rangeLabel: `for ${formatDisplayDate(startDate)} to ${formatDisplayDate(endDate)}`,
     };
   }
 
   const referenceMonth = parseDateInput(referenceDate);
-  const startMonth = new Date(referenceMonth.getFullYear(), referenceMonth.getMonth() - 11, 1);
-  const startLabel = startMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const endLabel = referenceMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const selectedYear = referenceMonth.getFullYear();
 
   return {
-    ariaLabel: `monthly expense bar chart from ${startLabel} to ${endLabel}`,
-    emptyMessage: `No expense data found from ${startLabel} to ${endLabel}.`,
-    rangeLabel: `12 months ending ${endLabel}`,
+    ariaLabel: `monthly expense bar chart from January to December ${selectedYear}`,
+    emptyMessage: `No expense data found in ${selectedYear}.`,
+    rangeLabel: `in ${selectedYear}`,
   };
 }
 
 function getWeeklyData(referenceDate = lineReferenceDate) {
   const dates = [];
   const totals = [];
-  const endDate = parseDateInput(referenceDate);
+  const { startDate } = getWeekBounds(referenceDate);
+  const weekStart = parseDateInput(startDate);
 
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(endDate);
-    d.setDate(endDate.getDate() - i);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
     const key = toDateInputValue(d);
     dates.push(key);
     const total = transactions
@@ -513,10 +539,10 @@ function getMonthlyData(referenceDate = lineReferenceDate) {
   const labels = [];
   const values = [];
   const selectedDate = parseDateInput(referenceDate);
-  const ref = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+  const selectedYear = selectedDate.getFullYear();
 
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(ref.getFullYear(), ref.getMonth() - i, 1);
+  for (let month = 0; month < 12; month++) {
+    const d = new Date(selectedYear, month, 1);
     const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
     labels.push(key);
     const total = transactions
@@ -565,6 +591,10 @@ function getDefaultLineMessage(labels, values) {
 }
 
 function syncLineMessage(labels, values) {
+  const totalSpent = values.reduce((sum, value) => sum + safeNumber(value), 0);
+  const lineContext = getLineContext();
+  els.lineTotal.textContent = `Total expenses ${lineContext.rangeLabel}: ${formatCurrency(totalSpent)}`;
+
   const hoveredBar = lineChartState.bars[lineChartState.hoveredIndex];
 
   if (!hoveredBar) {
@@ -884,7 +914,7 @@ function handleIncomeSubmit(event) {
 
   const amount = safeNumber(els.incomeAmount.value);
   if (!amount) {
-    alert("Enter a valid salary amount.");
+    alert("Enter a valid income amount.");
     return;
   }
 
@@ -892,14 +922,15 @@ function handleIncomeSubmit(event) {
     id: Date.now(),
     date: normalizeDateString(els.incomeDate.value),
     type: "income",
-    category: "Salary",
+    category: els.incomeCategory.value,
     amount,
-    note: els.incomeNote.value.trim() || "Monthly salary saved",
+    note: els.incomeNote.value.trim() || `${els.incomeCategory.value} income saved`,
   };
 
   transactions.unshift(incomeRecord);
   saveTransactions();
   els.incomeForm.reset();
+  els.incomeCategory.value = "Salary";
   els.incomeDate.value = toDateInputValue(today);
   refreshUI();
 }
@@ -950,6 +981,8 @@ function setupDefaults() {
   els.incomeDate.value = toDateInputValue(today);
   els.pieDate.value = pieReferenceDate;
   els.lineDate.value = lineReferenceDate;
+  renderIncomeSourceOptions();
+  els.incomeCategory.value = "Salary";
   renderCategoryOptions();
   els.lineRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.range === activeRange));
   els.pieRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.pieRange === pieRange));

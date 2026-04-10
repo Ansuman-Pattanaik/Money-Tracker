@@ -49,12 +49,13 @@
       <div class="panel-header">
         <div>
           <h2>Set Monthly Salary / Income</h2>
-          <p>Use this to save the monthly salary amount. You can update it anytime.</p>
+          <p>Use this to save salary or other income sources like rental and trading. You can update it anytime.</p>
         </div>
       </div>
 
       <form id="incomeForm" class="inline-form">
-        <input id="incomeAmount" type="number" min="0" step="0.01" placeholder="Enter monthly salary" required />
+        <input id="incomeAmount" type="number" min="0" step="0.01" placeholder="Enter income amount" required />
+        <select id="incomeCategory" aria-label="Choose income source" required></select>
         <input id="incomeDate" type="date" required />
         <input id="incomeNote" type="text" placeholder="Optional note" maxlength="80" />
         <button type="submit">Save Income</button>
@@ -118,6 +119,7 @@
             <div id="pieCenterAmount"></div>
           </div>
         </div>
+        <p id="pieTotal" class="chart-total">Total expenses: ₹0</p>
         <p id="pieMessage" class="chart-message">No expenses found for this period.</p>
       </article>
 
@@ -125,7 +127,7 @@
         <div class="panel-header line-header">
           <div>
             <h2>Weekly / Monthly Spending Bar</h2>
-            <p>Pick a date to see the 7 days ending on it, or the 12 months ending in that month.</p>
+            <p>Pick a date to see that week's Sunday to Saturday spending, or the full January to December year.</p>
           </div>
           <div class="line-controls">
             <label class="line-date-control">
@@ -139,6 +141,7 @@
           </div>
         </div>
         <canvas id="lineChart" width="640" height="320" aria-label="Bar chart"></canvas>
+        <p id="lineTotal" class="chart-total">Total expenses: ₹0</p>
         <p id="lineMessage" class="chart-message">Pick a date to update the weekly or monthly bar chart.</p>
       </article>
     </section>
