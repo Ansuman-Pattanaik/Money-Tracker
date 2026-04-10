@@ -8,8 +8,23 @@ const STORAGE_KEYS = {
   summaryMonth: "sxt_summary_month",
 };
 
-const expenseCategories = ["Food", "Travel", "Shopping", "Health Care", "EMI", "Others"];
+const expenseCategories = ["Food", "Travel", "Shopping", "Health Care", "Others"];
+const emiCategories = [
+  "Home Loan",
+  "Car Loan",
+  "Bike Loan",
+  "Phone EMI",
+  "Laptop EMI",
+  "Electronics EMI",
+  "Personal Loan",
+  "Gold Loan",
+];
 const incomeCategories = ["Salary", "Bonus", "Rental", "Trading", "Other Income"];
+const transactionTypeLabels = {
+  income: "Income",
+  expense: "Expense",
+  emi: "EMI",
+};
 const today = new Date();
 
 const els = {
@@ -174,11 +189,53 @@ function formatDisplayDate(dateStr, options = { day: "numeric", month: "short", 
   return parseDateInput(dateStr).toLocaleDateString(undefined, options);
 }
 
+function normalizeTransactionType(type) {
+  const normalized = String(type || "expense").toLowerCase();
+  return transactionTypeLabels[normalized] ? normalized : "expense";
+}
+
+function isExpenseLikeTransaction(transaction) {
+  const type = normalizeTransactionType(transaction && transaction.type);
+  return type === "expense" || type === "emi";
+}
+
+function isEmiCategory(category) {
+  return category === "EMI" || emiCategories.includes(category);
+}
+
+function isEmiTransaction(transaction) {
+  const type = normalizeTransactionType(transaction && transaction.type);
+  const category = transaction && transaction.category;
+  return type === "emi" || (type === "expense" && isEmiCategory(category));
+}
+
+function getTransactionTypeLabel(transaction) {
+  const typeKey = isEmiTransaction(transaction)
+    ? "emi"
+    : normalizeTransactionType(transaction && transaction.type);
+  return transactionTypeLabels[typeKey] || "Expense";
+}
+
+function getFormTransactionType(transaction) {
+  return isEmiTransaction(transaction) ? "emi" : normalizeTransactionType(transaction && transaction.type);
+}
+
 function loadTransactions() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.transactions);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed
+        .filter(item => item && typeof item === "object")
+        .map(item => ({
+          ...item,
+          type: normalizeTransactionType(item.type),
+          category: String(item.category || ""),
+          amount: safeNumber(item.amount),
+          date: normalizeDateString(item.date),
+          note: typeof item.note === "string" ? item.note : "",
+        }))
+      : [];
   } catch {
     return [];
   }
@@ -204,14 +261,26 @@ function initTheme() {
   setTheme(prefersDark ? "dark" : "light");
 }
 
-function getCategoryOptions() {
-  const type = els.transactionType.value;
-  return type === "income" ? incomeCategories : expenseCategories;
+function getCategoryOptions(type = els.transactionType.value, selectedCategory = "") {
+  const normalizedType = normalizeTransactionType(type);
+  const baseOptions = normalizedType === "income"
+    ? incomeCategories
+    : normalizedType === "emi"
+      ? emiCategories
+      : expenseCategories;
+
+  return selectedCategory && !baseOptions.includes(selectedCategory)
+    ? [...baseOptions, selectedCategory]
+    : baseOptions;
 }
 
-function renderCategoryOptions() {
-  const options = getCategoryOptions();
+function renderCategoryOptions(selectedCategory = "") {
+  const options = getCategoryOptions(els.transactionType.value, selectedCategory);
   els.categorySelect.innerHTML = options.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+
+  if (selectedCategory && options.includes(selectedCategory)) {
+    els.categorySelect.value = selectedCategory;
+  }
 }
 
 function renderIncomeSourceOptions() {
@@ -222,19 +291,19 @@ function renderIncomeSourceOptions() {
 
 function getMonthlyIncome(monthKey = summaryMonthKey) {
   return transactions
-    .filter(t => t.type === "income" && getMonthKey(t.date) === monthKey)
+    .filter(t => normalizeTransactionType(t.type) === "income" && getMonthKey(t.date) === monthKey)
     .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 }
 
 function getMonthlyExpenses(monthKey = summaryMonthKey) {
   return transactions
-    .filter(t => t.type === "expense" && getMonthKey(t.date) === monthKey)
+    .filter(t => isExpenseLikeTransaction(t) && getMonthKey(t.date) === monthKey)
     .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 }
 
 function getMonthlyEmi(monthKey = summaryMonthKey) {
   return transactions
-    .filter(t => t.type === "expense" && t.category === "EMI" && getMonthKey(t.date) === monthKey)
+    .filter(t => isEmiTransaction(t) && getMonthKey(t.date) === monthKey)
     .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 }
 
@@ -261,7 +330,7 @@ function getPieChartData() {
     const longEnd = formatDisplayDate(referenceDate);
 
     return {
-      records: transactions.filter(t => t.type === "expense" && t.date >= startDate && t.date <= referenceDate),
+      records: transactions.filter(t => isExpenseLikeTransaction(t) && t.date >= startDate && t.date <= referenceDate),
       contextLabel: `from ${longStart} to ${longEnd}`,
       emptyMessage: `No expenses found from ${longStart} to ${longEnd}.`,
     };
@@ -271,7 +340,7 @@ function getPieChartData() {
     const monthLabel = formatDisplayDate(referenceDate, { month: "long", year: "numeric" });
 
     return {
-      records: transactions.filter(t => t.type === "expense" && getMonthKey(t.date) === getMonthKey(referenceDate)),
+      records: transactions.filter(t => isExpenseLikeTransaction(t) && getMonthKey(t.date) === getMonthKey(referenceDate)),
       contextLabel: `in ${monthLabel}`,
       emptyMessage: `No expenses found in ${monthLabel}.`,
     };
@@ -280,7 +349,7 @@ function getPieChartData() {
   const dayLabel = formatDisplayDate(referenceDate);
 
   return {
-    records: transactions.filter(t => t.type === "expense" && sameDay(t.date, referenceDate)),
+    records: transactions.filter(t => isExpenseLikeTransaction(t) && sameDay(t.date, referenceDate)),
     contextLabel: `on ${dayLabel}`,
     emptyMessage: `No expenses found on ${dayLabel}.`,
   };
@@ -553,7 +622,7 @@ function getWeeklyData(referenceDate = lineReferenceDate) {
     const key = toDateInputValue(d);
     dates.push(key);
     const total = transactions
-      .filter(t => t.type === "expense" && t.date === key)
+      .filter(t => isExpenseLikeTransaction(t) && t.date === key)
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
     totals.push(total);
   }
@@ -571,7 +640,7 @@ function getMonthlyData(referenceDate = lineReferenceDate) {
     const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
     labels.push(key);
     const total = transactions
-      .filter(t => t.type === "expense" && getMonthKey(t.date) === key)
+      .filter(t => isExpenseLikeTransaction(t) && getMonthKey(t.date) === key)
       .reduce((sum, t) => sum + safeNumber(t.amount), 0);
     values.push(total);
   }
@@ -820,7 +889,7 @@ function drawLineChart() {
   syncLineMessage(labels, values);
 }
 
-function renderHistory() {
+function renderHistoryLegacy() {
   els.historyList.innerHTML = "";
 
   if (!transactions.length) {
@@ -886,8 +955,8 @@ function startEdit(id) {
 
   editingId = id;
   els.transactionDate.value = item.date;
-  els.transactionType.value = item.type;
-  renderCategoryOptions();
+  els.transactionType.value = getFormTransactionType(item);
+  renderCategoryOptions(item.category);
   els.categorySelect.value = item.category;
   els.transactionAmount.value = item.amount;
   els.transactionNote.value = item.note || "";
@@ -915,7 +984,7 @@ function handleTransactionSubmit(event) {
 
   const payload = {
     date: normalizeDateString(els.transactionDate.value),
-    type: els.transactionType.value,
+    type: normalizeTransactionType(els.transactionType.value),
     category: els.categorySelect.value,
     amount: safeNumber(els.transactionAmount.value),
     note: els.transactionNote.value.trim(),
@@ -1052,6 +1121,56 @@ function setupDefaults() {
   renderCategoryOptions();
   els.lineRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.range === activeRange));
   els.pieRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.pieRange === pieRange));
+}
+
+function renderHistory() {
+  els.historyList.innerHTML = "";
+
+  if (!transactions.length) {
+    els.historyList.innerHTML = `<p class="subtle">No transactions yet. Add one above and it will appear here.</p>`;
+    return;
+  }
+
+  const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+
+  sorted.forEach((item) => {
+    const node = els.historyTemplate.content.cloneNode(true);
+    const root = node.querySelector(".history-item");
+    const title = node.querySelector(".history-title");
+    const typeEl = node.querySelector(".history-type");
+    const meta = node.querySelector(".history-meta");
+    const note = node.querySelector(".history-note");
+    const amount = node.querySelector(".history-amount");
+    const editBtn = node.querySelector(".edit-btn");
+    const deleteBtn = node.querySelector(".delete-btn");
+    const isIncome = normalizeTransactionType(item.type) === "income";
+    const isEmi = isEmiTransaction(item);
+    const typeLabel = getTransactionTypeLabel(item);
+    const categoryLabel = item.category || typeLabel;
+
+    title.textContent = categoryLabel;
+    typeEl.textContent = typeLabel;
+    typeEl.style.color = isIncome ? "var(--good)" : isEmi ? "var(--warning)" : "var(--muted)";
+    meta.textContent = `${item.date} | ${categoryLabel} | ${typeLabel}`;
+    note.textContent = item.note ? item.note : "No note added";
+    amount.textContent = `${isIncome ? "+" : "-"} ${formatCurrency(item.amount)}`;
+
+    if (isIncome) {
+      amount.style.color = "var(--good)";
+      root.style.borderLeft = "4px solid var(--good)";
+    } else if (isEmi) {
+      amount.style.color = "var(--danger)";
+      root.style.borderLeft = "4px solid var(--warning)";
+    } else {
+      amount.style.color = "var(--danger)";
+      root.style.borderLeft = "4px solid var(--danger)";
+    }
+
+    editBtn.addEventListener("click", () => startEdit(item.id));
+    deleteBtn.addEventListener("click", () => deleteTransaction(item.id));
+
+    els.historyList.appendChild(node);
+  });
 }
 
 function setupEvents() {

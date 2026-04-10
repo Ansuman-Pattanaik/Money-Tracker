@@ -71,7 +71,7 @@
       <div class="panel-header">
         <div>
           <h2>Add Daily Transaction</h2>
-          <p>Add an expense or income entry. Expenses power the charts and transaction history.</p>
+          <p>Add an expense, EMI, or income entry. Expenses and EMI both feed the charts and history.</p>
         </div>
         <span id="editBadge" class="edit-badge hidden">Editing</span>
       </div>
@@ -81,6 +81,7 @@
 
         <select id="transactionType" required>
           <option value="expense" selected>Expense</option>
+          <option value="emi">EMI</option>
           <option value="income">Income</option>
         </select>
 
@@ -88,7 +89,7 @@
 
         <input id="transactionAmount" type="number" min="0" step="0.01" placeholder="Amount" required />
 
-        <input id="transactionNote" type="text" placeholder="Notes like lunch, cab, EMI..." maxlength="100" />
+        <input id="transactionNote" type="text" placeholder="Notes like lunch, cab, home loan..." maxlength="100" />
 
         <div class="form-actions">
           <button type="submit" id="saveTransactionBtn">Add Transaction</button>
