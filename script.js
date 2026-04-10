@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   activeRange: "sxt_active_range",
   pieRange: "sxt_pie_range",
   pieDate: "sxt_pie_date",
+  lineDate: "sxt_line_date",
 };
 
 const expenseCategories = ["Food", "Travel", "Shopping", "Health Care", "EMI", "Others"];
@@ -37,6 +38,7 @@ const els = {
   pieCenterAmount: document.getElementById("pieCenterAmount"),
   pieMessage: document.getElementById("pieMessage"),
   lineCanvas: document.getElementById("lineChart"),
+  lineDate: document.getElementById("lineDate"),
   lineMessage: document.getElementById("lineMessage"),
   historyList: document.getElementById("historyList"),
   historyTemplate: document.getElementById("historyItemTemplate"),
@@ -49,6 +51,7 @@ let editingId = null;
 let activeRange = localStorage.getItem(STORAGE_KEYS.activeRange) || "weekly";
 let pieRange = localStorage.getItem(STORAGE_KEYS.pieRange) || "daily";
 let pieReferenceDate = normalizeDateString(localStorage.getItem(STORAGE_KEYS.pieDate) || toDateInputValue(today));
+let lineReferenceDate = normalizeDateString(localStorage.getItem(STORAGE_KEYS.lineDate) || toDateInputValue(today));
 const PIE_COLORS = ["#5b7cfa", "#7c3aed", "#0f9d58", "#f59e0b", "#dc2626", "#14b8a6"];
 const pieChartState = {
   segments: [],
@@ -463,13 +466,39 @@ function drawPieChart() {
   syncPieCenterContent();
 }
 
-function getWeeklyData() {
+function getLineContext() {
+  const referenceDate = normalizeDateString(lineReferenceDate);
+
+  if (activeRange === "weekly") {
+    const startDate = shiftDateString(referenceDate, -6);
+
+    return {
+      ariaLabel: `weekly expense bar chart from ${formatDisplayDate(startDate)} to ${formatDisplayDate(referenceDate)}`,
+      emptyMessage: `No expense data found from ${formatDisplayDate(startDate)} to ${formatDisplayDate(referenceDate)}.`,
+      rangeLabel: `week ending ${formatDisplayDate(referenceDate)}`,
+    };
+  }
+
+  const referenceMonth = parseDateInput(referenceDate);
+  const startMonth = new Date(referenceMonth.getFullYear(), referenceMonth.getMonth() - 11, 1);
+  const startLabel = startMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const endLabel = referenceMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  return {
+    ariaLabel: `monthly expense bar chart from ${startLabel} to ${endLabel}`,
+    emptyMessage: `No expense data found from ${startLabel} to ${endLabel}.`,
+    rangeLabel: `12 months ending ${endLabel}`,
+  };
+}
+
+function getWeeklyData(referenceDate = lineReferenceDate) {
   const dates = [];
   const totals = [];
-  const todayObj = new Date();
+  const endDate = parseDateInput(referenceDate);
+
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(todayObj);
-    d.setDate(todayObj.getDate() - i);
+    const d = new Date(endDate);
+    d.setDate(endDate.getDate() - i);
     const key = toDateInputValue(d);
     dates.push(key);
     const total = transactions
@@ -480,11 +509,13 @@ function getWeeklyData() {
   return { labels: dates, values: totals };
 }
 
-function getMonthlyData() {
+function getMonthlyData(referenceDate = lineReferenceDate) {
   const labels = [];
   const values = [];
-  const ref = new Date(today.getFullYear(), today.getMonth(), 1);
-  for (let i = 5; i >= 0; i--) {
+  const selectedDate = parseDateInput(referenceDate);
+  const ref = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+
+  for (let i = 11; i >= 0; i--) {
     const d = new Date(ref.getFullYear(), ref.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
     labels.push(key);
@@ -498,7 +529,7 @@ function getMonthlyData() {
 
 function formatAxisLabel(label, range) {
   if (range === "weekly") {
-    const d = new Date(label);
+    const d = parseDateInput(label);
     return d.toLocaleDateString(undefined, { weekday: "short" });
   }
   const [year, month] = label.split("-").map(Number);
@@ -508,8 +539,8 @@ function formatAxisLabel(label, range) {
 
 function formatPeriodLabel(label, range) {
   if (range === "weekly") {
-    const d = new Date(label);
-    return d.toLocaleDateString(undefined, { weekday: "long" });
+    const d = parseDateInput(label);
+    return d.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "short", year: "numeric" });
   }
   const [year, month] = label.split("-").map(Number);
   const d = new Date(year, month - 1, 1);
@@ -517,19 +548,20 @@ function formatPeriodLabel(label, range) {
 }
 
 function getDefaultLineMessage(labels, values) {
+  const lineContext = getLineContext();
   const topIndex = values.indexOf(Math.max(...values));
   const topValue = values[topIndex] || 0;
   const topLabel = labels[topIndex];
 
   if (!topValue) {
-    return "No expense data found for this period.";
+    return lineContext.emptyMessage;
   }
 
   if (activeRange === "weekly") {
-    return `You spent most on ${formatPeriodLabel(topLabel, activeRange)} this week.`;
+    return `Highest spend ${lineContext.rangeLabel} was on ${formatPeriodLabel(topLabel, activeRange)}.`;
   }
 
-  return `You spent most in ${formatPeriodLabel(topLabel, activeRange)}.`;
+  return `Highest spend ${lineContext.rangeLabel} was in ${formatPeriodLabel(topLabel, activeRange)}.`;
 }
 
 function syncLineMessage(labels, values) {
@@ -641,9 +673,13 @@ function drawLineChart() {
   const { width, height } = els.lineCanvas;
   ctx.clearRect(0, 0, width, height);
 
-  const data = activeRange === "weekly" ? getWeeklyData() : getMonthlyData();
+  const lineContext = getLineContext();
+  const data = activeRange === "weekly"
+    ? getWeeklyData(lineReferenceDate)
+    : getMonthlyData(lineReferenceDate);
   const values = data.values;
   const labels = data.labels;
+  els.lineCanvas.setAttribute("aria-label", lineContext.ariaLabel);
 
   const padLeft = 56;
   const padRight = 20;
@@ -884,6 +920,15 @@ function handleRangeChange(range) {
   drawLineChart();
 }
 
+function handleLineDateChange() {
+  lineReferenceDate = normalizeDateString(els.lineDate.value);
+  els.lineDate.value = lineReferenceDate;
+  localStorage.setItem(STORAGE_KEYS.lineDate, lineReferenceDate);
+  lineChartState.hoveredIndex = null;
+  els.lineCanvas.style.cursor = "default";
+  drawLineChart();
+}
+
 function handlePieRangeChange(range) {
   pieRange = range;
   localStorage.setItem(STORAGE_KEYS.pieRange, range);
@@ -904,6 +949,7 @@ function setupDefaults() {
   els.transactionDate.value = toDateInputValue(today);
   els.incomeDate.value = toDateInputValue(today);
   els.pieDate.value = pieReferenceDate;
+  els.lineDate.value = lineReferenceDate;
   renderCategoryOptions();
   els.lineRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.range === activeRange));
   els.pieRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.pieRange === pieRange));
@@ -936,6 +982,7 @@ function setupEvents() {
   });
 
   els.pieDate.addEventListener("change", handlePieDateChange);
+  els.lineDate.addEventListener("change", handleLineDateChange);
 
   els.pieCanvas.addEventListener("mousemove", handlePieMouseMove);
   els.pieCanvas.addEventListener("mouseleave", handlePieMouseLeave);

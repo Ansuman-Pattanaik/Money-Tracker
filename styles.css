@@ -257,13 +257,15 @@ button:active {
   margin-bottom: 18px;
 }
 
-.pie-date-control {
+.pie-date-control,
+.line-date-control {
   display: grid;
   gap: 6px;
   min-width: 182px;
 }
 
-.pie-date-control span {
+.pie-date-control span,
+.line-date-control span {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
@@ -271,7 +273,8 @@ button:active {
   text-transform: uppercase;
 }
 
-.pie-date-control input {
+.pie-date-control input,
+.line-date-control input {
   min-width: 0;
 }
 
@@ -345,6 +348,14 @@ button:active {
 
 .line-header {
   align-items: center;
+}
+
+.line-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 #lineChart {
@@ -450,6 +461,10 @@ button:active {
   .line-header {
     align-items: flex-start;
   }
+
+  .line-controls {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 720px) {
@@ -482,6 +497,15 @@ button:active {
   }
 
   .pie-date-control {
+    min-width: 0;
+  }
+
+  .line-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .line-date-control {
     min-width: 0;
   }
 

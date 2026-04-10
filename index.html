@@ -125,15 +125,21 @@
         <div class="panel-header line-header">
           <div>
             <h2>Weekly / Monthly Spending Bar</h2>
-            <p>Tracks total expenses as bars. Hover a bar to see the spend for that period.</p>
+            <p>Pick a date to see the 7 days ending on it, or the 12 months ending in that month.</p>
           </div>
-          <div class="segmented line-segmented" role="tablist" aria-label="Chart filter">
-            <button type="button" class="segment line-range-btn active" data-range="weekly">Weekly</button>
-            <button type="button" class="segment line-range-btn" data-range="monthly">Monthly</button>
+          <div class="line-controls">
+            <label class="line-date-control">
+              <span>Reference Date</span>
+              <input id="lineDate" type="date" aria-label="Choose a date for the bar chart" />
+            </label>
+            <div class="segmented line-segmented" role="tablist" aria-label="Chart filter">
+              <button type="button" class="segment line-range-btn active" data-range="weekly">Weekly</button>
+              <button type="button" class="segment line-range-btn" data-range="monthly">Monthly</button>
+            </div>
           </div>
         </div>
         <canvas id="lineChart" width="640" height="320" aria-label="Bar chart"></canvas>
-        <p id="lineMessage" class="chart-message">Hover a bar to see the spend for that period.</p>
+        <p id="lineMessage" class="chart-message">Pick a date to update the weekly or monthly bar chart.</p>
       </article>
     </section>
 
