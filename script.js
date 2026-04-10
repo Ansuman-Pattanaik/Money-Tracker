@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   pieRange: "sxt_pie_range",
   pieDate: "sxt_pie_date",
   lineDate: "sxt_line_date",
+  summaryMonth: "sxt_summary_month",
 };
 
 const expenseCategories = ["Food", "Travel", "Shopping", "Health Care", "EMI", "Others"];
@@ -12,8 +13,10 @@ const incomeCategories = ["Salary", "Bonus", "Rental", "Trading", "Other Income"
 const today = new Date();
 
 const els = {
+  clearAllBtn: document.getElementById("clearAllBtn"),
   themeToggle: document.getElementById("themeToggle"),
   themeIcon: document.getElementById("themeIcon"),
+  summaryMonth: document.getElementById("summaryMonth"),
   monthlyIncome: document.getElementById("monthlyIncome"),
   totalExpenses: document.getElementById("totalExpenses"),
   totalEmi: document.getElementById("totalEmi"),
@@ -55,6 +58,7 @@ let activeRange = localStorage.getItem(STORAGE_KEYS.activeRange) || "weekly";
 let pieRange = localStorage.getItem(STORAGE_KEYS.pieRange) || "daily";
 let pieReferenceDate = normalizeDateString(localStorage.getItem(STORAGE_KEYS.pieDate) || toDateInputValue(today));
 let lineReferenceDate = normalizeDateString(localStorage.getItem(STORAGE_KEYS.lineDate) || toDateInputValue(today));
+let summaryMonthKey = normalizeMonthString(localStorage.getItem(STORAGE_KEYS.summaryMonth) || toMonthInputValue(today));
 const PIE_COLORS = ["#5b7cfa", "#7c3aed", "#0f9d58", "#f59e0b", "#dc2626", "#14b8a6"];
 const pieChartState = {
   segments: [],
@@ -88,6 +92,11 @@ function toDateInputValue(date = new Date()) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+function toMonthInputValue(date = new Date()) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+}
+
 function formatCurrency(value) {
   const safe = Number.isFinite(value) ? value : 0;
   return `₹${safe.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -103,6 +112,23 @@ function normalizeDateString(dateStr) {
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return toDateInputValue(today);
   return toDateInputValue(d);
+}
+
+function normalizeMonthString(monthStr) {
+  const match = String(monthStr || "").match(/^(\d{4})-(\d{2})$/);
+
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+
+    if (month >= 1 && month <= 12) {
+      return `${year}-${pad(month)}`;
+    }
+  }
+
+  const fallback = new Date(monthStr);
+  if (Number.isNaN(fallback.getTime())) return toMonthInputValue(today);
+  return toMonthInputValue(fallback);
 }
 
 function getMonthKey(dateStr) {
@@ -194,37 +220,36 @@ function renderIncomeSourceOptions() {
     .join("");
 }
 
-function getMonthlyIncome() {
-  const currentMonth = getMonthKey(toDateInputValue(today));
+function getMonthlyIncome(monthKey = summaryMonthKey) {
   return transactions
-    .filter(t => t.type === "income" && getMonthKey(t.date) === currentMonth)
+    .filter(t => t.type === "income" && getMonthKey(t.date) === monthKey)
     .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 }
 
-function getMonthlyExpenses() {
-  const currentMonth = getMonthKey(toDateInputValue(today));
+function getMonthlyExpenses(monthKey = summaryMonthKey) {
   return transactions
-    .filter(t => t.type === "expense" && getMonthKey(t.date) === currentMonth)
+    .filter(t => t.type === "expense" && getMonthKey(t.date) === monthKey)
     .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 }
 
-function getMonthlyEmi() {
-  const currentMonth = getMonthKey(toDateInputValue(today));
+function getMonthlyEmi(monthKey = summaryMonthKey) {
   return transactions
-    .filter(t => t.type === "expense" && t.category === "EMI" && getMonthKey(t.date) === currentMonth)
+    .filter(t => t.type === "expense" && t.category === "EMI" && getMonthKey(t.date) === monthKey)
     .reduce((sum, t) => sum + safeNumber(t.amount), 0);
 }
 
-function getBalance() {
-  return getMonthlyIncome() - getMonthlyExpenses();
+function getBalance(monthKey = summaryMonthKey) {
+  return getMonthlyIncome(monthKey) - getMonthlyExpenses(monthKey);
 }
 
 function updateSummaryCards() {
-  els.monthlyIncome.textContent = formatCurrency(getMonthlyIncome());
-  els.totalExpenses.textContent = formatCurrency(getMonthlyExpenses());
-  els.totalEmi.textContent = formatCurrency(getMonthlyEmi());
-  els.balanceAmount.textContent = formatCurrency(getBalance());
-  els.balanceAmount.style.color = getBalance() < 0 ? "var(--danger)" : "var(--good)";
+  const balance = getBalance(summaryMonthKey);
+
+  els.monthlyIncome.textContent = formatCurrency(getMonthlyIncome(summaryMonthKey));
+  els.totalExpenses.textContent = formatCurrency(getMonthlyExpenses(summaryMonthKey));
+  els.totalEmi.textContent = formatCurrency(getMonthlyEmi(summaryMonthKey));
+  els.balanceAmount.textContent = formatCurrency(balance);
+  els.balanceAmount.style.color = balance < 0 ? "var(--danger)" : "var(--good)";
 }
 
 function getPieChartData() {
@@ -849,6 +874,12 @@ function resetForm() {
   renderCategoryOptions();
 }
 
+function resetIncomeForm() {
+  els.incomeForm.reset();
+  els.incomeCategory.value = "Salary";
+  els.incomeDate.value = toDateInputValue(today);
+}
+
 function startEdit(id) {
   const item = transactions.find(t => t.id === id);
   if (!item) return;
@@ -929,9 +960,7 @@ function handleIncomeSubmit(event) {
 
   transactions.unshift(incomeRecord);
   saveTransactions();
-  els.incomeForm.reset();
-  els.incomeCategory.value = "Salary";
-  els.incomeDate.value = toDateInputValue(today);
+  resetIncomeForm();
   refreshUI();
 }
 
@@ -960,6 +989,13 @@ function handleLineDateChange() {
   drawLineChart();
 }
 
+function handleSummaryMonthChange() {
+  summaryMonthKey = normalizeMonthString(els.summaryMonth.value);
+  els.summaryMonth.value = summaryMonthKey;
+  localStorage.setItem(STORAGE_KEYS.summaryMonth, summaryMonthKey);
+  updateSummaryCards();
+}
+
 function handlePieRangeChange(range) {
   pieRange = range;
   localStorage.setItem(STORAGE_KEYS.pieRange, range);
@@ -976,11 +1012,41 @@ function handlePieDateChange() {
   drawPieChart();
 }
 
+function clearAllData() {
+  const ok = confirm("Clear all saved income, expenses, chart data, and history? This will reset everything back to zero.");
+  if (!ok) return;
+
+  transactions = [];
+  editingId = null;
+  activeRange = "weekly";
+  pieRange = "daily";
+  pieReferenceDate = toDateInputValue(today);
+  lineReferenceDate = toDateInputValue(today);
+  summaryMonthKey = toMonthInputValue(today);
+
+  localStorage.removeItem(STORAGE_KEYS.transactions);
+  localStorage.removeItem(STORAGE_KEYS.activeRange);
+  localStorage.removeItem(STORAGE_KEYS.pieRange);
+  localStorage.removeItem(STORAGE_KEYS.pieDate);
+  localStorage.removeItem(STORAGE_KEYS.lineDate);
+  localStorage.removeItem(STORAGE_KEYS.summaryMonth);
+
+  resetPieInteraction();
+  lineChartState.hoveredIndex = null;
+  els.lineCanvas.style.cursor = "default";
+
+  resetForm();
+  resetIncomeForm();
+  setupDefaults();
+  refreshUI();
+}
+
 function setupDefaults() {
   els.transactionDate.value = toDateInputValue(today);
   els.incomeDate.value = toDateInputValue(today);
   els.pieDate.value = pieReferenceDate;
   els.lineDate.value = lineReferenceDate;
+  els.summaryMonth.value = summaryMonthKey;
   renderIncomeSourceOptions();
   els.incomeCategory.value = "Salary";
   renderCategoryOptions();
@@ -1005,6 +1071,8 @@ function setupEvents() {
   els.incomeForm.addEventListener("submit", handleIncomeSubmit);
 
   els.cancelEditBtn.addEventListener("click", resetForm);
+  els.clearAllBtn.addEventListener("click", clearAllData);
+  els.summaryMonth.addEventListener("change", handleSummaryMonthChange);
 
   els.lineRangeButtons.forEach(btn => {
     btn.addEventListener("click", () => handleRangeChange(btn.dataset.range));

@@ -13,6 +13,7 @@
         <p class="eyebrow">Personal Finance Dashboard</p>
         <h1>Smart Expense Tracker</h1>
         <p class="subtle">Track salary, expenses, EMI, and spending patterns without the clutter.</p>
+        <button id="clearAllBtn" class="clear-btn" type="button">Clear All Data</button>
       </div>
       <button id="themeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
         <span id="themeIcon">🌙</span>
@@ -22,26 +23,30 @@
     <section class="cards-grid">
       <article class="stat-card accent">
         <span>Monthly Income</span>
+        <label class="summary-month-control">
+          <span>Summary Month</span>
+          <input id="summaryMonth" type="month" aria-label="Choose summary month" />
+        </label>
         <strong id="monthlyIncome">₹0</strong>
-        <small>Saved salary / all income for this month</small>
+        <small>Saved salary and other income for the selected month</small>
       </article>
 
       <article class="stat-card">
         <span>Total Expenses</span>
         <strong id="totalExpenses">₹0</strong>
-        <small>All expense types combined</small>
+        <small>All expense types combined for the selected month</small>
       </article>
 
       <article class="stat-card">
-        <span>EMI This Month</span>
+        <span>EMI Total</span>
         <strong id="totalEmi">₹0</strong>
-        <small>EMI included inside expenses</small>
+        <small>EMI included inside the selected month's expenses</small>
       </article>
 
       <article class="stat-card">
         <span>Balance</span>
         <strong id="balanceAmount">₹0</strong>
-        <small>Income minus expenses</small>
+        <small>Income minus expenses for the selected month</small>
       </article>
     </section>
 
