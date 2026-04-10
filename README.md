@@ -1,1 +1,1 @@
-# Expense track
+# Expense tracker
