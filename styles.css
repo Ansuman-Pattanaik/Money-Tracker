@@ -13,7 +13,6 @@
   --warning: #f59e0b;
   --chip: rgba(91,124,250,0.12);
 }
-
 [data-theme="dark"] {
   --bg: #0b1220;
   --card: rgba(15, 22, 36, 0.86);
@@ -29,11 +28,9 @@
   --warning: #ffd166;
   --chip: rgba(122,162,255,0.14);
 }
-
 * {
   box-sizing: border-box;
 }
-
 html, body {
   margin: 0;
   padding: 0;
@@ -45,22 +42,18 @@ html, body {
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-
 body {
   padding: 24px;
 }
-
 button, input, select {
   font: inherit;
 }
-
 .app-shell {
   max-width: 1280px;
   margin: 0 auto;
   display: grid;
   gap: 20px;
 }
-
 .topbar {
   display: flex;
   align-items: flex-start;
@@ -68,7 +61,6 @@ button, input, select {
   gap: 16px;
   padding: 4px 2px 8px;
 }
-
 .eyebrow {
   margin: 0 0 6px;
   color: var(--accent);
@@ -77,25 +69,21 @@ button, input, select {
   text-transform: uppercase;
   font-size: 0.78rem;
 }
-
 .brand-title {
   margin: 0;
   line-height: 1.05;
 }
-
 .brand-logo {
   display: block;
   width: min(360px, 78vw);
   max-width: 100%;
   height: auto;
 }
-
 .subtle {
   margin: 10px 0 0;
   color: var(--muted);
   max-width: 700px;
 }
-
 .clear-btn {
   margin-top: 14px;
   background: rgba(220, 38, 38, 0.12);
@@ -103,7 +91,6 @@ button, input, select {
   border: 1px solid rgba(220, 38, 38, 0.2);
   font-weight: 700;
 }
-
 .icon-btn {
   width: 48px;
   height: 48px;
@@ -113,67 +100,61 @@ button, input, select {
   box-shadow: var(--shadow);
   cursor: pointer;
 }
-
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
-
 .stat-card, .panel {
   background: var(--card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(12px);
 }
-
 .stat-card {
   padding: 18px;
   border-radius: 24px;
   display: grid;
   gap: 10px;
 }
-
 .stat-card span {
   color: var(--muted);
   font-size: 0.92rem;
 }
-
 .stat-card strong {
   font-size: clamp(1.35rem, 2vw, 1.9rem);
 }
-
 .stat-card small {
   color: var(--muted);
   line-height: 1.4;
 }
-
-.summary-month-control {
+.summary-month-control,
+.pie-date-control,
+.line-date-control {
   display: grid;
   gap: 6px;
 }
-
-.summary-month-control span {
+.summary-month-control span,
+.pie-date-control span,
+.line-date-control span {
   color: var(--muted);
-  font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-
+.summary-month-control span {
+  font-size: 0.76rem;
+}
 .summary-month-control input {
   padding: 12px 14px;
 }
-
 .stat-card.accent {
   background: linear-gradient(135deg, rgba(91,124,250,0.16), rgba(124,58,237,0.16));
 }
-
 .panel {
   border-radius: 28px;
   padding: 22px;
 }
-
 .panel-header {
   display: flex;
   align-items: flex-start;
@@ -181,37 +162,29 @@ button, input, select {
   gap: 16px;
   margin-bottom: 18px;
 }
-
 .panel-header h2 {
   margin: 0;
   font-size: 1.25rem;
 }
-
 .panel-header p {
   margin: 6px 0 0;
   color: var(--muted);
 }
-
 .inline-form,
-.transaction-form {
-  display: grid;
-  gap: 12px;
-}
-
+.transaction-form,
 .category-form {
   display: grid;
-  grid-template-columns: 1fr 2fr auto;
   gap: 12px;
 }
-
+.category-form {
+  grid-template-columns: 1fr 2fr auto;
+}
 .inline-form {
   grid-template-columns: 1.2fr 1fr 1fr 1.2fr auto;
 }
-
 .transaction-form {
   grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr auto;
 }
-
 input, select {
   width: 100%;
   border: 1px solid var(--border);
@@ -221,11 +194,9 @@ input, select {
   border-radius: 16px;
   outline: none;
 }
-
 input::placeholder {
   color: #8a97aa;
 }
-
 button {
   border: none;
   border-radius: 16px;
@@ -233,25 +204,20 @@ button {
   cursor: pointer;
   transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 }
-
 button:hover {
   transform: translateY(-1px);
 }
-
 button:active {
   transform: translateY(0);
 }
-
 .form-actions {
   display: flex;
   gap: 10px;
   align-items: stretch;
 }
-
 .form-actions button {
   white-space: nowrap;
 }
-
 #incomeForm button,
 #customCategoryForm button,
 #transactionForm button[type="submit"] {
@@ -259,46 +225,38 @@ button:active {
   color: white;
   font-weight: 700;
 }
-
 .ghost-btn, .edit-btn {
   background: var(--chip);
   color: var(--text);
   border: 1px solid var(--border);
 }
-
 .delete-btn {
   background: rgba(220, 38, 38, 0.12);
   color: var(--danger);
   border: 1px solid rgba(220, 38, 38, 0.2);
 }
-
 .hidden {
   display: none !important;
 }
-
 .category-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 18px;
 }
-
 .category-group h3 {
   margin: 0 0 10px;
   font-size: 0.95rem;
 }
-
 .category-empty {
   margin: 0;
   color: var(--muted);
 }
-
 .category-chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-
 .category-chip {
   display: inline-flex;
   align-items: center;
@@ -310,11 +268,9 @@ button:active {
   color: var(--text);
   font-weight: 700;
 }
-
 .category-chip span {
   overflow-wrap: anywhere;
 }
-
 .category-chip button {
   padding: 4px 8px;
   border-radius: 999px;
@@ -324,59 +280,48 @@ button:active {
   font-size: 0.78rem;
   font-weight: 800;
 }
-
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1.25fr;
   gap: 20px;
 }
-
 .chart-panel {
   min-height: 100%;
 }
-
-.pie-controls {
+.pie-controls,
+.line-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: center;
   gap: 12px;
+}
+.pie-controls {
+  justify-content: center;
   margin-bottom: 18px;
 }
-
 .pie-date-control,
 .line-date-control {
-  display: grid;
-  gap: 6px;
   min-width: 182px;
 }
-
 .pie-date-control span,
 .line-date-control span {
-  color: var(--muted);
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
-
 .pie-date-control input,
 .line-date-control input {
   min-width: 0;
 }
-
 .pie-wrap {
   position: relative;
   width: min(100%, 360px);
   margin: 0 auto;
 }
-
+#lineChart,
 .pie-wrap canvas {
   width: 100%;
   height: auto;
   display: block;
 }
-
 .pie-center {
   position: absolute;
   inset: 0;
@@ -388,37 +333,33 @@ button:active {
   text-align: center;
   pointer-events: none;
 }
-
 #pieCenterPercent {
   font-size: 2rem;
   font-weight: 800;
 }
-
 #pieCenterLabel {
   font-size: 0.95rem;
   font-weight: 700;
 }
-
 #pieCenterAmount {
   color: var(--muted);
   font-size: 0.9rem;
 }
-
+.chart-total,
+.chart-message {
+  text-align: center;
+}
 .chart-total {
   margin: 16px 0 0;
   color: var(--text);
-  text-align: center;
   font-size: 0.95rem;
   font-weight: 800;
 }
-
 .chart-message {
   margin: 8px 0 0;
   color: var(--muted);
-  text-align: center;
   font-weight: 600;
 }
-
 .segmented {
   display: inline-flex;
   background: var(--chip);
@@ -426,7 +367,6 @@ button:active {
   border-radius: 16px;
   padding: 4px;
 }
-
 .segment {
   background: transparent;
   color: var(--text);
@@ -434,33 +374,21 @@ button:active {
   padding: 10px 14px;
   min-width: 88px;
 }
-
 .segment.active {
   background: var(--card-solid);
   box-shadow: var(--shadow);
   font-weight: 700;
 }
-
 .line-header {
   align-items: center;
 }
-
 .line-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
   justify-content: flex-end;
-  gap: 12px;
 }
-
 #lineChart {
-  width: 100%;
-  height: auto;
-  display: block;
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(91,124,250,0.05), transparent);
 }
-
 .history-list {
   display: grid;
   gap: 12px;
@@ -468,7 +396,6 @@ button:active {
   overflow: auto;
   padding-right: 4px;
 }
-
 .history-item {
   display: flex;
   justify-content: space-between;
@@ -478,18 +405,15 @@ button:active {
   padding: 16px;
   background: var(--card-solid);
 }
-
 .history-topline {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
-
 .history-title {
   font-size: 1rem;
 }
-
 .history-type {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -499,17 +423,14 @@ button:active {
   background: var(--chip);
   color: var(--muted);
 }
-
 .history-meta,
 .history-note {
   margin: 6px 0 0;
   color: var(--muted);
 }
-
 .history-note {
   font-style: italic;
 }
-
 .history-right {
   display: flex;
   flex-direction: column;
@@ -517,16 +438,13 @@ button:active {
   gap: 10px;
   min-width: 120px;
 }
-
 .history-amount {
   font-size: 1.15rem;
 }
-
 .history-actions {
   display: flex;
   gap: 8px;
 }
-
 .edit-badge {
   padding: 8px 12px;
   border-radius: 999px;
@@ -535,7 +453,6 @@ button:active {
   border: 1px solid rgba(245, 158, 11, 0.18);
   font-weight: 700;
 }
-
 @media (max-width: 1100px) {
   .cards-grid,
   .dashboard-grid,
@@ -544,34 +461,27 @@ button:active {
   .transaction-form {
     grid-template-columns: 1fr 1fr;
   }
-
   .transaction-form .form-actions,
   .inline-form button {
     grid-column: 1 / -1;
   }
-
   .panel-header {
     flex-direction: column;
   }
-
   .line-header {
     align-items: flex-start;
   }
-
   .line-controls {
     justify-content: flex-start;
   }
 }
-
 @media (max-width: 720px) {
   body {
     padding: 14px;
   }
-
   .topbar {
     flex-direction: column;
   }
-
   .cards-grid,
   .dashboard-grid,
   .category-form,
@@ -580,41 +490,27 @@ button:active {
   .transaction-form {
     grid-template-columns: 1fr;
   }
-
   .history-item {
     flex-direction: column;
   }
-
   .history-right {
     align-items: flex-start;
   }
-
-  .pie-controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .pie-date-control {
-    min-width: 0;
-  }
-
+  .pie-controls,
   .line-controls {
     flex-direction: column;
     align-items: stretch;
   }
-
+  .pie-date-control,
   .line-date-control {
     min-width: 0;
   }
-
   .segmented {
     width: 100%;
   }
-
   .line-segmented .segment {
     width: 50%;
   }
-
   .pie-segmented .segment {
     width: 33.333%;
   }
