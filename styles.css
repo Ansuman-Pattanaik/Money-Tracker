@@ -192,6 +192,12 @@ h1 {
   gap: 12px;
 }
 
+.category-form {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 12px;
+}
+
 .inline-form {
   grid-template-columns: 1.2fr 1fr 1fr 1.2fr auto;
 }
@@ -241,6 +247,7 @@ button:active {
 }
 
 #incomeForm button,
+#customCategoryForm button,
 #transactionForm button[type="submit"] {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: white;
@@ -261,6 +268,55 @@ button:active {
 
 .hidden {
   display: none !important;
+}
+
+.category-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.category-group h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.category-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.category-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.category-chip span {
+  overflow-wrap: anywhere;
+}
+
+.category-chip button {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--card-solid);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .dashboard-grid {
@@ -477,6 +533,7 @@ button:active {
 @media (max-width: 1100px) {
   .cards-grid,
   .dashboard-grid,
+  .category-list,
   .inline-form,
   .transaction-form {
     grid-template-columns: 1fr 1fr;
@@ -511,6 +568,8 @@ button:active {
 
   .cards-grid,
   .dashboard-grid,
+  .category-form,
+  .category-list,
   .inline-form,
   .transaction-form {
     grid-template-columns: 1fr;

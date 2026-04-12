@@ -1,5 +1,6 @@
 const STORAGE_KEYS = {
   transactions: "sxt_transactions",
+  customCategories: "sxt_custom_categories",
   theme: "sxt_theme",
   activeRange: "sxt_active_range",
   pieRange: "sxt_pie_range",
@@ -41,6 +42,10 @@ const els = {
   incomeCategory: document.getElementById("incomeCategory"),
   incomeDate: document.getElementById("incomeDate"),
   incomeNote: document.getElementById("incomeNote"),
+  customCategoryForm: document.getElementById("customCategoryForm"),
+  customCategoryType: document.getElementById("customCategoryType"),
+  customCategoryName: document.getElementById("customCategoryName"),
+  customCategoryList: document.getElementById("customCategoryList"),
   transactionForm: document.getElementById("transactionForm"),
   transactionDate: document.getElementById("transactionDate"),
   transactionType: document.getElementById("transactionType"),
@@ -68,6 +73,7 @@ const els = {
 };
 
 let transactions = loadTransactions();
+let customCategories = loadCustomCategories();
 let editingId = null;
 let activeRange = localStorage.getItem(STORAGE_KEYS.activeRange) || "weekly";
 let pieRange = localStorage.getItem(STORAGE_KEYS.pieRange) || "daily";
@@ -241,6 +247,56 @@ function loadTransactions() {
   }
 }
 
+function normalizeCategoryName(value) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function uniqueCategoryList(categories) {
+  const seen = new Set();
+
+  return categories
+    .map(normalizeCategoryName)
+    .filter(Boolean)
+    .filter((category) => {
+      const key = category.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function getEmptyCustomCategories() {
+  return {
+    expense: [],
+    income: [],
+  };
+}
+
+function normalizeCustomCategories(value) {
+  const safe = getEmptyCustomCategories();
+
+  if (!value || typeof value !== "object") {
+    return safe;
+  }
+
+  safe.expense = Array.isArray(value.expense) ? uniqueCategoryList(value.expense) : [];
+  safe.income = Array.isArray(value.income) ? uniqueCategoryList(value.income) : [];
+  return safe;
+}
+
+function loadCustomCategories() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.customCategories);
+    return normalizeCustomCategories(raw ? JSON.parse(raw) : {});
+  } catch {
+    return getEmptyCustomCategories();
+  }
+}
+
+function saveCustomCategories() {
+  localStorage.setItem(STORAGE_KEYS.customCategories, JSON.stringify(customCategories));
+}
+
 function saveTransactions() {
   localStorage.setItem(STORAGE_KEYS.transactions, JSON.stringify(transactions));
 }
@@ -268,25 +324,146 @@ function getCategoryOptions(type = els.transactionType.value, selectedCategory =
     : normalizedType === "emi"
       ? emiCategories
       : expenseCategories;
+  const customOptions = normalizedType === "income" || normalizedType === "expense"
+    ? customCategories[normalizedType] || []
+    : [];
+  const options = uniqueCategoryList([...baseOptions, ...customOptions]);
+  const normalizedSelected = normalizeCategoryName(selectedCategory);
 
-  return selectedCategory && !baseOptions.includes(selectedCategory)
-    ? [...baseOptions, selectedCategory]
-    : baseOptions;
+  return normalizedSelected && !options.some(cat => cat.toLowerCase() === normalizedSelected.toLowerCase())
+    ? [...options, normalizedSelected]
+    : options;
+}
+
+function renderSelectOptions(selectEl, options, selectedCategory = "") {
+  const normalizedSelected = normalizeCategoryName(selectedCategory);
+  const selectedOption = options.find(cat => cat === selectedCategory)
+    || options.find(cat => cat.toLowerCase() === normalizedSelected.toLowerCase());
+
+  selectEl.replaceChildren(...options.map((cat) => {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    return option;
+  }));
+
+  if (selectedOption) {
+    selectEl.value = selectedOption;
+  }
 }
 
 function renderCategoryOptions(selectedCategory = "") {
   const options = getCategoryOptions(els.transactionType.value, selectedCategory);
-  els.categorySelect.innerHTML = options.map(cat => `<option value="${cat}">${cat}</option>`).join("");
-
-  if (selectedCategory && options.includes(selectedCategory)) {
-    els.categorySelect.value = selectedCategory;
-  }
+  renderSelectOptions(els.categorySelect, options, selectedCategory);
 }
 
-function renderIncomeSourceOptions() {
-  els.incomeCategory.innerHTML = incomeCategories
-    .map(cat => `<option value="${cat}">${cat}</option>`)
-    .join("");
+function renderIncomeSourceOptions(selectedCategory = "") {
+  const options = getCategoryOptions("income", selectedCategory);
+  renderSelectOptions(els.incomeCategory, options, selectedCategory);
+}
+
+function renderCustomCategoryList() {
+  const groups = [
+    { type: "expense", title: "Expense", empty: "No custom expense categories yet." },
+    { type: "income", title: "Income", empty: "No custom income categories yet." },
+  ];
+
+  els.customCategoryList.replaceChildren();
+
+  groups.forEach(({ type, title, empty }) => {
+    const group = document.createElement("div");
+    group.className = "category-group";
+
+    const heading = document.createElement("h3");
+    heading.textContent = `${title} categories`;
+    group.appendChild(heading);
+
+    const categories = customCategories[type] || [];
+
+    if (!categories.length) {
+      const emptyText = document.createElement("p");
+      emptyText.className = "category-empty";
+      emptyText.textContent = empty;
+      group.appendChild(emptyText);
+      els.customCategoryList.appendChild(group);
+      return;
+    }
+
+    const row = document.createElement("div");
+    row.className = "category-chip-row";
+
+    categories.forEach((category) => {
+      const chip = document.createElement("span");
+      chip.className = "category-chip";
+
+      const label = document.createElement("span");
+      label.textContent = category;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.textContent = "Remove";
+      removeBtn.setAttribute("aria-label", `Remove ${category} ${title.toLowerCase()} category`);
+      removeBtn.addEventListener("click", () => deleteCustomCategory(type, category));
+
+      chip.append(label, removeBtn);
+      row.appendChild(chip);
+    });
+
+    group.appendChild(row);
+    els.customCategoryList.appendChild(group);
+  });
+}
+
+function handleCustomCategorySubmit(event) {
+  event.preventDefault();
+
+  const type = els.customCategoryType.value === "income" ? "income" : "expense";
+  const category = normalizeCategoryName(els.customCategoryName.value);
+
+  if (!category) {
+    alert("Enter a category name.");
+    return;
+  }
+
+  if (getCategoryOptions(type).some(cat => cat.toLowerCase() === category.toLowerCase())) {
+    alert(`${category} already exists in ${transactionTypeLabels[type].toLowerCase()} categories.`);
+    return;
+  }
+
+  customCategories = {
+    ...customCategories,
+    [type]: uniqueCategoryList([...(customCategories[type] || []), category]),
+  };
+
+  saveCustomCategories();
+  renderCustomCategoryList();
+  renderCategoryOptions(els.transactionType.value === type ? category : els.categorySelect.value);
+  renderIncomeSourceOptions(type === "income" ? category : els.incomeCategory.value);
+  els.customCategoryName.value = "";
+  els.customCategoryName.focus();
+}
+
+function deleteCustomCategory(type, category) {
+  const ok = confirm(`Remove ${category} from custom ${transactionTypeLabels[type].toLowerCase()} categories? Existing transactions stay unchanged.`);
+  if (!ok) return;
+
+  const key = category.toLowerCase();
+  const selectedTransactionCategory = els.transactionType.value === type && els.categorySelect.value.toLowerCase() === key
+    ? ""
+    : els.categorySelect.value;
+  const selectedIncomeCategory = type === "income" && els.incomeCategory.value.toLowerCase() === key
+    ? ""
+    : els.incomeCategory.value;
+
+  customCategories = {
+    ...customCategories,
+    [type]: (customCategories[type] || []).filter(cat => cat.toLowerCase() !== key),
+  };
+
+  saveCustomCategories();
+  renderCustomCategoryList();
+  renderCategoryOptions(selectedTransactionCategory);
+  renderIncomeSourceOptions(selectedIncomeCategory);
 }
 
 function getMonthlyIncome(monthKey = summaryMonthKey) {
@@ -1082,10 +1259,11 @@ function handlePieDateChange() {
 }
 
 function clearAllData() {
-  const ok = confirm("Clear all saved income, expenses, chart data, and history? This will reset everything back to zero.");
+  const ok = confirm("Clear all saved income, expenses, custom categories, chart data, and history? This will reset everything back to zero.");
   if (!ok) return;
 
   transactions = [];
+  customCategories = getEmptyCustomCategories();
   editingId = null;
   activeRange = "weekly";
   pieRange = "daily";
@@ -1094,6 +1272,7 @@ function clearAllData() {
   summaryMonthKey = toMonthInputValue(today);
 
   localStorage.removeItem(STORAGE_KEYS.transactions);
+  localStorage.removeItem(STORAGE_KEYS.customCategories);
   localStorage.removeItem(STORAGE_KEYS.activeRange);
   localStorage.removeItem(STORAGE_KEYS.pieRange);
   localStorage.removeItem(STORAGE_KEYS.pieDate);
@@ -1119,6 +1298,7 @@ function setupDefaults() {
   renderIncomeSourceOptions();
   els.incomeCategory.value = "Salary";
   renderCategoryOptions();
+  renderCustomCategoryList();
   els.lineRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.range === activeRange));
   els.pieRangeButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.pieRange === pieRange));
 }
@@ -1188,6 +1368,7 @@ function setupEvents() {
 
   els.transactionForm.addEventListener("submit", handleTransactionSubmit);
   els.incomeForm.addEventListener("submit", handleIncomeSubmit);
+  els.customCategoryForm.addEventListener("submit", handleCustomCategorySubmit);
 
   els.cancelEditBtn.addEventListener("click", resetForm);
   els.clearAllBtn.addEventListener("click", clearAllData);

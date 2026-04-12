@@ -67,6 +67,26 @@
       </form>
     </section>
 
+    <section class="panel category-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Custom Categories</h2>
+          <p>Add income or expense categories for rent, gifts, freelance work, or anything else.</p>
+        </div>
+      </div>
+
+      <form id="customCategoryForm" class="category-form">
+        <select id="customCategoryType" aria-label="Choose category type" required>
+          <option value="expense" selected>Expense</option>
+          <option value="income">Income</option>
+        </select>
+        <input id="customCategoryName" type="text" placeholder="New category name" maxlength="40" required />
+        <button type="submit">Add Category</button>
+      </form>
+
+      <div id="customCategoryList" class="category-list" aria-live="polite"></div>
+    </section>
+
     <section class="panel">
       <div class="panel-header">
         <div>
