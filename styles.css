@@ -78,10 +78,16 @@ button, input, select {
   font-size: 0.78rem;
 }
 
-h1 {
+.brand-title {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1.05;
+}
+
+.brand-logo {
+  display: block;
+  width: min(360px, 78vw);
+  max-width: 100%;
+  height: auto;
 }
 
 .subtle {

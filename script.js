@@ -26,10 +26,15 @@ const transactionTypeLabels = {
   expense: "Expense",
   emi: "EMI",
 };
+const logoSources = {
+  light: "1776011150175.png",
+  dark: "1776008751843.png",
+};
 const today = new Date();
 
 const els = {
   clearAllBtn: document.getElementById("clearAllBtn"),
+  brandLogo: document.getElementById("brandLogo"),
   themeToggle: document.getElementById("themeToggle"),
   themeIcon: document.getElementById("themeIcon"),
   summaryMonth: document.getElementById("summaryMonth"),
@@ -303,6 +308,7 @@ function saveTransactions() {
 
 function setTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
+  els.brandLogo.src = theme === "dark" ? logoSources.dark : logoSources.light;
   els.themeIcon.textContent = theme === "dark" ? "☀️" : "🌙";
   localStorage.setItem(STORAGE_KEYS.theme, theme);
 }
